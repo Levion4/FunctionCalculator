@@ -5,6 +5,7 @@
     /// </summary>
     public class LinearFunction : FunctionBase
     {
+        ///<inheritdoc/>
         public override double Calculate(double x, double y)
         {
             return A * x + B * 1 + C;

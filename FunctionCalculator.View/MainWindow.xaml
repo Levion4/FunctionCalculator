@@ -41,14 +41,16 @@
                           FontSize="14"
                           Width="150"/>
             </StackPanel>
+            <Button Content="Добавить строку" Margin="0,0,0,10" Command="{Binding AddRowCommand}" />
+            <Button Content="Удалить последнюю строку" Margin="0,0,0,10" Command="{Binding RemoveRowCommand}" />
         </StackPanel>
 
         <DataGrid Grid.Row="1" Grid.Column="1" Margin="10"
-          ItemsSource="{Binding Data}" AutoGenerateColumns="False" 
+          ItemsSource="{Binding CurrentData}" AutoGenerateColumns="False" 
           CanUserAddRows="False" FontSize="14" HeadersVisibility="Column" RowHeight="35">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="X" Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" Width="*" />
-                <DataGridTextColumn Header="Y" Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                <DataGridTextColumn Header="x" Binding="{Binding X, UpdateSourceTrigger=PropertyChanged}" Width="*" />
+                <DataGridTextColumn Header="y" Binding="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Width="*" />
                 <DataGridTextColumn Header="f(x, y)" Binding="{Binding Result}" IsReadOnly="True" Width="*" />
             </DataGrid.Columns>
         </DataGrid>

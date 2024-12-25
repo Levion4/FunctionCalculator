@@ -5,6 +5,7 @@
     /// </summary>
     public class QuadraticFunction : FunctionBase
     {
+        ///<inheritdoc/>
         public override double Calculate(double x, double y)
         {
             return A * Math.Pow(x, 2) + B * y + C;
