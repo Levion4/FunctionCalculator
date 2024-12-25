@@ -5,6 +5,7 @@
     /// </summary>
     public class FourthDegreeFunction : FunctionBase
     {
+        ///<inheritdoc/>
         public override double Calculate(double x, double y)
         {
             return A * Math.Pow(x, 4) + B * Math.Pow(y, 3) + C;

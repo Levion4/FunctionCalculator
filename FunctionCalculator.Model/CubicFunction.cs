@@ -5,6 +5,7 @@
     /// </summary>
     public class CubicFunction : FunctionBase
     {
+        ///<inheritdoc/>
         public override double Calculate(double x, double y)
         {
             return A * Math.Pow(x, 3) + B * Math.Pow(y, 2) + C;

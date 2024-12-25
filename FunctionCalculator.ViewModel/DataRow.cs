@@ -1,13 +1,11 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using FunctionCalculator.Model;
+﻿using FunctionCalculator.Model;
 
 namespace FunctionCalculator.ViewModel
 {
     /// <summary>
     /// Представляет строку данных таблицы.
     /// </summary>
-    public class DataRow : INotifyPropertyChanged
+    public class DataRow : BaseVM
     {
         /// <summary>
         /// Значение X.
@@ -28,11 +26,6 @@ namespace FunctionCalculator.ViewModel
         /// Функция.
         /// </summary>
         private FunctionBase _function;
-
-        /// <summary>
-        /// Событие для уведомления об изменении свойства.
-        /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
         /// Создает экземпляр класса <see cref="DataRow"/>.
@@ -109,15 +102,6 @@ namespace FunctionCalculator.ViewModel
             {
                 Result = _function.Calculate(X, Y);
             }
-        }
-
-        /// <summary>
-        /// Уведомляет интерфейс об изменении свойства.
-        /// </summary>
-        /// <param name="propertyName">Имя измененного свойства.</param>
-        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using FunctionCalculator.Model;
 
@@ -10,12 +7,19 @@ namespace FunctionCalculator.ViewModel
     /// <summary>
     /// Представляет ViewModel для главного окна приложения.
     /// </summary>
-    public class MainViewModel : INotifyPropertyChanged
+    public class MainViewModel : BaseVM
     {
         /// <summary>
         /// Репозиторий функций, предоставляющий доступ к доступным функциям.
         /// </summary>
         private readonly FunctionRepository _functionRepository;
+
+        /// <summary>
+        /// Словарь, который хранит список табличных
+        /// значений для каждой функции.
+        /// </summary>
+        private readonly Dictionary
+            <string, ObservableCollection<DataRow>> _functionData;
 
         /// <summary>
         /// Текущая выбранная функция.
@@ -43,21 +47,6 @@ namespace FunctionCalculator.ViewModel
         private double _c;
 
         /// <summary>
-        /// Значение X, введенное пользователем.
-        /// </summary>
-        private double _x;
-
-        /// <summary>
-        /// Значение Y, введенное пользователем.
-        /// </summary>
-        private double _y;
-
-        /// <summary>
-        /// Событие для уведомления об изменении свойства.
-        /// </summary>
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        /// <summary>
         /// Возвращает список доступных значений для коэффициента C
         /// в зависимости от функции.
         /// </summary>
@@ -70,9 +59,19 @@ namespace FunctionCalculator.ViewModel
         public ObservableCollection<string> FunctionNames { get; }
 
         /// <summary>
-        /// Возвращает данные таблицы.
+        /// Команда для добавления строки в таблицу.
         /// </summary>
-        public ObservableCollection<DataRow> Data { get; set; }
+        public ICommand AddRowCommand { get; }
+
+        /// <summary>
+        /// Команда для удаления последней строки в таблице.
+        /// </summary>
+        public ICommand RemoveRowCommand { get; }
+
+        /// <summary>
+        /// Возвращает данные таблицы, выбранной функции.
+        /// </summary>
+        public ObservableCollection<DataRow> CurrentData { get; set; }
 
         /// <summary>
         /// Возвращает и задает текущую выбранную функцию.
@@ -108,12 +107,14 @@ namespace FunctionCalculator.ViewModel
                 if (_a != value)
                 {
                     _a = value;
-                    OnPropertyChanged();
 
                     if (_selectedFunction != null)
                     {
                         _selectedFunction.A = _a;
                     }
+
+                    UpdateAllRows();
+                    OnPropertyChanged();
                 }
             }
         }
@@ -132,12 +133,14 @@ namespace FunctionCalculator.ViewModel
                 if (_b != value)
                 {
                     _b = value;
-                    OnPropertyChanged();
 
                     if (_selectedFunction != null)
                     {
                         _selectedFunction.B = _b;
                     }
+
+                    UpdateAllRows();
+                    OnPropertyChanged();
                 }
             }
         }
@@ -156,49 +159,13 @@ namespace FunctionCalculator.ViewModel
                 if (_c != value)
                 {
                     _c = value;
-                    OnPropertyChanged();
 
                     if (_selectedFunction != null)
                     {
                         _selectedFunction.C = _c;
                     }
-                }
-            }
-        }
 
-        /// <summary>
-        /// Возвращает и задает значение X.
-        /// </summary>
-        public double X
-        {
-            get
-            {
-                return _x;
-            }
-            set
-            {
-                if (_x != value)
-                {
-                    _x = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Возвращает и задает значение Y.
-        /// </summary>
-        public double Y
-        {
-            get
-            {
-                return _y;
-            }
-            set
-            {
-                if (_y != value)
-                {
-                    _y = value;
+                    UpdateAllRows();
                     OnPropertyChanged();
                 }
             }
@@ -212,28 +179,21 @@ namespace FunctionCalculator.ViewModel
             _functionRepository = new FunctionRepository();
             FunctionNames = new ObservableCollection<string>(
                 _functionRepository.GetFunctionNames());
-            Data = new ObservableCollection<DataRow>();
-            AddInitialRow();
-        }
+            CurrentData = new ObservableCollection<DataRow>();
+            AddRowCommand = new RelayCommand(AddRow);
+            RemoveRowCommand = new RelayCommand(RemoveRow);
 
-        /// <summary>
-        /// Уведомляет интерфейс об изменении свойства.
-        /// </summary>
-        /// <param name="propertyName">Имя измененного свойства.</param>
-        private void OnPropertyChanged(
-            [CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this,
-                new PropertyChangedEventArgs(propertyName));
-
-            if (Data.Count > 0)
+            _functionData = new Dictionary<string, ObservableCollection<DataRow>>();
+            foreach (var functionName in FunctionNames)
             {
-                var lastRow = Data[^1];
-                if (lastRow.X != 0 && lastRow.Y != 0) 
+                _functionData[functionName] = new ObservableCollection<DataRow>
                 {
-                    AddRow();
-                }
+                    new DataRow(_functionRepository.GetFunction(functionName))
+                };
             }
+
+            _selectedFunction = _functionRepository.GetFunction(FunctionNames[0]);
+            SelectedFunctionName = FunctionNames[0];
         }
 
         /// <summary>
@@ -251,6 +211,8 @@ namespace FunctionCalculator.ViewModel
                 B = _selectedFunction.B;
                 C = _selectedFunction.C;
 
+                CurrentData = _functionData[SelectedFunctionName];
+
                 var options = SelectedFunctionName switch
                 {
                     "Линейная" => new[] { 1.0, 2.0, 3.0, 4.0, 5.0 },
@@ -266,10 +228,12 @@ namespace FunctionCalculator.ViewModel
                     CoefficientCOptions.Add(option);
                 }
 
-                foreach (var row in Data)
+                foreach (var row in CurrentData)
                 {
                     row.SetFunction(_selectedFunction);
                 }
+
+                OnPropertyChanged(nameof(CurrentData));
             }
         }
 
@@ -282,22 +246,38 @@ namespace FunctionCalculator.ViewModel
             if (_selectedFunction != null)
             {
                 var newRow = new DataRow(_selectedFunction);
-                Data.Add(newRow);
+                CurrentData.Add(newRow);
+                UpdateAllRows();
             }
         }
 
         /// <summary>
-        /// Добавляет начальную строку в таблицу.
+        /// Удаляет последнюю строку в таблице.
         /// </summary>
-        private void AddInitialRow()
+        private void RemoveRow()
         {
-            if (_selectedFunction == null)
+            if (_selectedFunction != null)
             {
-                _selectedFunction = _functionRepository.GetFunction(FunctionNames[0]);
-                SelectedFunctionName = FunctionNames[0];
+                if (CurrentData.Count > 0)
+                {
+                    var index = CurrentData.Count - 1;
+                    CurrentData.Remove(CurrentData[index]);
+                }
             }
-            var newRow = new DataRow(_selectedFunction);
-            Data.Add(newRow);
+        }
+
+        /// <summary>
+        /// Обновляет все строки таблицы на основе текущих коэффициентов и функции.
+        /// </summary>
+        private void UpdateAllRows()
+        {
+            if (_selectedFunction != null)
+            {
+                foreach (var row in CurrentData)
+                {
+                    row.SetFunction(_selectedFunction);
+                }
+            }
         }
     }
 }
